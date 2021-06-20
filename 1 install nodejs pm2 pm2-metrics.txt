@@ -1,0 +1,50 @@
+apt-get install curl
+curl -sL https://deb.nodesource.com/setup_14.x | sudo bash -
+sudo apt install nodejs
+
+node --version
+npm --version
+
+
+cd /home/docker_rnd &&
+mkdir ./test_expressjs &&
+cd ./test_expressjs
+
+
+
+nano app.js
+var express = require('express')
+var app = express()
+
+app.get('/', function (req, res) {
+  res.send('hello world')
+})
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}.`);
+});
+
+
+npm init
+npm i express
+
+
+npm i pm2 -g
+apt-get install git
+
+
+pm2 start /home/docker_rnd/test_expressjs/app.js --name test_appjs
+
+
+mkdir -p /home/docker_rnd && git clone https://github.com/saikatharryc/pm2-prometheus-exporter.git
+
+npm install
+pm2 start /home/docker_rnd/pm2-prometheus-exporter/exporter.js --name pm2-metrics
+
+download https://grafana.com/grafana/dashboards/12745
+
+reference :
+https://github.com/saikatharryc/pm2-prometheus-exporter
+https://grafana.com/grafana/dashboards/12745
+------------
