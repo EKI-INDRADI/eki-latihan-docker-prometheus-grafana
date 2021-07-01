@@ -3,8 +3,8 @@ https://prometheus.io/docs/prometheus/latest/installation/
 
 //================================= STEP 0
 
-mkdir -p /home/docker_rnd/prometheus_files
-chmod 777 -Rv /home/docker_rnd/prometheus_files
+mkdir -p /home/EKI_DOCKER_FILES/prometheus_files
+chmod 777 -Rv /home/EKI_DOCKER_FILES/prometheus_files
 
 //================================= STEP 1
 
@@ -34,13 +34,13 @@ download manual di hosts
 
 upload ke VM :
 cd "D:\LINUX\DOCKER\DOCKER GRAFANA PROMETHEUS"
-scp -v node_exporter-1.1.2.linux-amd64.tar.gz -P 22 crypt@192.168.100.6:/home/docker_rnd/prometheus_files/
+scp -v node_exporter-1.1.2.linux-amd64.tar.gz -P 22 crypt@192.168.100.11:/home/EKI_DOCKER_FILES/prometheus_files/
 
 
 ========================download node exporter
 
 
-cd /home/docker_rnd/prometheus_files
+cd /home/EKI_DOCKER_FILES/prometheus_files
 tar -xvf node_exporter-1.1.2.linux-amd64.tar.gz
 
 cd node_exporter-1.1.2.linux-amd64
@@ -50,9 +50,25 @@ sudo useradd -rs /bin/false node_exporter
 
 sudo nano /etc/systemd/system/node_exporter.service
 
+//======================= NOT USED
 [Unit]
 Description=Node Exporter
 After=network.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/usr/local/bin/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+//======================= NOT USED
+
+
+[Unit]
+Description=Node Exporter
+
 
 [Service]
 User=node_exporter
@@ -67,7 +83,7 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 sudo systemctl start node_exporter
 sudo systemctl status node_exporter
-
+sudo systemctl enable node_exporter
 
 apt-get install net-tools
 netstat -plnt
@@ -76,22 +92,20 @@ netstat -plnt
 
 
 //================================= STEP 3 DOCKER PROMET
-mkdir -p /home/docker_rnd/prometheus_files
-chmod 777 -Rv /home/docker_rnd/prometheus_files
-nano /home/docker_rnd/prometheus_files/prometheus.yml
+mkdir -p /home/EKI_DOCKER_FILES/prometheus_files
+chmod 777 -Rv /home/EKI_DOCKER_FILES/prometheus_files
+nano /home/EKI_DOCKER_FILES/prometheus_files/prometheus.yml
 
 
 
 
 
-global:
- scrape_interval: 10s
 scrape_configs:
 
 - job_name: 'node_exporter_metrics'
   scrape_interval: 5s
   static_configs:
-    - targets: ['{{host.docker.internal}}:9100']
+    - targets: ['172.17.0.1:9100']
 
 
 //================================= STEP 3 DOCKER PROMET
@@ -100,30 +114,32 @@ scrape_configs:
 
 //================================= STEP 4
 ----------------------- pake create container
-docker container create --name prometheus_v2.27.1 \
+docker container create --name prometheus_v2.27.1_7000 \
+--restart always \
 -p 7000:9090 \
--v /home/docker_rnd/prometheus_files/prometheus.yml:/etc/prometheus/prometheus.yml \
+-v /home/EKI_DOCKER_FILES/prometheus_files/prometheus.yml:/etc/prometheus/prometheus.yml \
 prom/prometheus:v2.27.1
 
-docker container start prometheus_v2.27.1
+docker container start prometheus_v2.27.1_7000
 ----------------------- pake create container
 
 ----------------------- pake langsung  run container
 
 docker run -d \
-    --name prometheus_v2.27.1 \
-    -v /home/docker_rnd/prometheus_files/prometheus.yml:/etc/prometheus/prometheus.yml \
+    --restart always \
+    --name prometheus_v2.27.1_7000 \
+    -v /home/EKI_DOCKER_FILES/prometheus_files/prometheus.yml:/etc/prometheus/prometheus.yml \
     -p 7000:9090 \
 prom/prometheus:v2.27.1
 
 ----------------------- pake langsung   run container
 
-docker exec  -u 0 -it prometheus_v2.27.1 sh  <<< alpine root
+docker exec  -u 0 -it prometheus_v2.27.1_7000 sh  <<< alpine root
 
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-x docker exec -it prometheus_v2.27.1 sh  <<< alpine
-x docker exec -it prometheus_v2.27.1 bash << ubuntu
-x docker exec -u 0 -it prometheus_v2.27.1 bash << root ubuntu
+x docker exec -it prometheus_v2.27.1_7000 sh  <<< alpine
+x docker exec -it prometheus_v2.27.1_7000 bash << ubuntu
+x docker exec -u 0 -it prometheus_v2.27.1_7000 bash << root ubuntu
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ifconfig
@@ -131,10 +147,10 @@ ifconfig
 
 atau bisa juga
 
-docker container inspect prometheus_v2.27.1   BALIK LAGI KE STEP 3
-docker container stop prometheus_v2.27.1 
+docker container inspect prometheus_v2.27.1_7000   BALIK LAGI KE STEP 3
+docker container stop prometheus_v2.27.1_7000 
 
-nano /home/docker_rnd/prometheus_files/prometheus.yml
+nano /home/EKI_DOCKER_FILES/prometheus_files/prometheus.yml
 
 
 scrape_configs:
@@ -145,8 +161,8 @@ scrape_configs:
     - targets: ['172.17.0.1:9100']
 
 docker run -d \
-    --name prometheus_v2.27.1 \
-    -v /home/docker_rnd/prometheus_files/prometheus.yml:/etc/prometheus/prometheus.yml \
+    --name prometheus_v2.27.1_7000 \
+    -v /home/EKI_DOCKER_FILES/prometheus_files/prometheus.yml:/etc/prometheus/prometheus.yml \
     -p 7000:9090 \
 prom/prometheus:v2.27.1
 
@@ -158,9 +174,9 @@ docker network --help
 docker network create monitoring_network  (membuat network)
 docker network ls (melihat list network)
 
-docker network connect monitoring_network prometheus_v2.27.1
+docker network connect monitoring_network prometheus_v2.27.1_7000
 
-docker container inspect prometheus_v2.27.1 <==== melihat ip gateway
+docker container inspect prometheus_v2.27.1_7000 <==== melihat ip gateway
 
 docker network inspect monitoring_network <==== melihat container yang connect kedalam jaringan
 //================================= / STEP 5
@@ -169,7 +185,19 @@ docker network inspect monitoring_network <==== melihat container yang connect k
 //================================= STEP 6
 docker pull grafana/grafana:8.0.2
 
-docker run -d -p 8000:3000 --name grafana_v8.0.3 grafana/grafana:8.0.2  <<<< alpin
+
+
+docker run -d --restart always -p 8000:3000 --name grafana_v8.0.2_8000 grafana/grafana:8.0.2  <<<< alpin
+
+
+recomended ------------
+
+docker container create --name grafana_v8.0.2_8000 \
+ --restart always \
+-p 8000:3000 grafana/grafana:8.0.2 
+
+docker container start  grafana_v8.0.2_8000
+----------- ------------
 
 
 admin_user = admin
@@ -177,14 +205,15 @@ admin_password = admin
 
 -----
 note : nanti akan minta rubah password , kalo ga minta rubah password nanti jalankan ini :
-docker exec -it grafana_v8.0.2 grafana-cli admin reset-admin-password admin123 sh
+docker exec -it grafana_v8.0.2_8000 grafana-cli admin reset-admin-password admin123 sh
 -----
 
-docker network connect monitoring_network grafana_v8.0.3 
+
+docker network connect monitoring_network grafana_v8.0.2_8000
 //================================= / STEP 6
 
 //================================= STEP 7
-login grafana http://192.168.100.6:8000
+login grafana http://192.168.100.11:8000
 
 
 docker network inspect monitoring_network
@@ -196,7 +225,12 @@ http://172.18.0.2:9090   <<<< sesuaikan dengan yang ada di monitoring_network
 //================================= / STEP 7
 
 //================================= STEP 8
-login grafana http://192.168.100.6:8000
+login grafana http://192.168.100.11:8000
+
+admin
+admin
+
+ubah_password_km
 
 download di pc biasa https://grafana.com/grafana/dashboards/11074
 dashboard > manage > import dari download tadi
